@@ -15,7 +15,7 @@ async function fetchISBNData(isbn) {
       `https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}`
     );
     const data = await googleResponse.json();
-
+    console.log('googleResponse', data);
     if (data.totalItems > 0) {
       const bookInfo = data.items[0].volumeInfo;
       const book = {
@@ -35,6 +35,10 @@ async function fetchISBNData(isbn) {
     const $ = load(html);
 
     const firstBook = $('.table-container .table-tr .table-td').first();
+    if (firstBook.length === 0) {
+      return [];
+    }
+
     const book = {
       isbn: isbn,
       title:
