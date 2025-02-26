@@ -28,33 +28,43 @@ async function fetchISBNData(isbn) {
     }
 
     // Google Books 找不到，改用博客來
-    const response = await fetch(
-      `https://search.books.com.tw/search/query/key/${isbn}/cat/all`
-    );
-    const html = await response.text();
-    const $ = load(html);
+    try {
+      const response = await fetch(
+        `https://search.books.com.tw/search/query/key/${isbn}/cat/all`
+      );
+      const html = await response.text();
+      const $ = load(html);
 
-    const firstBook = $('.table-container .table-tr .table-td').first();
-    if (firstBook.length === 0) {
-      return [];
-    }
+      const firstBook = $('.table-container .table-tr .table-td').first();
+      if (firstBook.length === 0) {
+        console.log('No book found on books.com.tw');
+        return [];
+      }
 
-    const book = {
-      isbn: isbn,
-      title:
+      const title =
         firstBook
           .find('h4 a')
           .first()
           .attr('title')
-          ?.replace(' (電子書)', '') || '',
-      author: firstBook
+          ?.replace(' (電子書)', '') || '';
+      const author = firstBook
         .find('.type .author a')
         .map((_, el) => $(el).attr('title'))
         .get()
-        .join(', '),
-    };
-    console.log('book from blog', book);
-    return [book];
+        .join(', ');
+
+      if (!title && !author) {
+        console.log('No valid book info found on books.com.tw');
+        return [];
+      }
+
+      const book = { isbn, title, author };
+      console.log('book from blog', book);
+      return [book];
+    } catch (blogError) {
+      console.error('Error fetching from books.com.tw:', blogError);
+      return [];
+    }
   } catch (error) {
     console.error('Error fetching book data:', error);
     return [];
