@@ -21,6 +21,7 @@ async function fetchISBNData(isbn) {
     //   const book = {
     //     title: bookInfo.title,
     //     author: bookInfo.authors?.join(', ') || '',
+    //     publisher: bookInfo.publisher || '',
     //     isbn: isbn,
     //   };
     //   console.log('book from google', book);
@@ -52,13 +53,29 @@ async function fetchISBNData(isbn) {
         .map((_, el) => $(el).attr('title'))
         .get()
         .join(', ');
+      const publisher =
+        firstBook
+          .find('.type')
+          .contents()
+          .filter((_, node) => node.type === 'text')
+          .text()
+          .trim()
+          .split('/')
+          .find(
+            (part) =>
+              part.trim() &&
+              !part.includes('出版') &&
+              !part.includes('年') &&
+              !part.includes('月')
+          )
+          ?.trim() || '';
 
       if (!title && !author) {
         console.log('No valid book info found on books.com.tw');
         return [];
       }
 
-      const book = { isbn, title, author };
+      const book = { isbn, title, author, publisher };
       return [book];
     } catch (blogError) {
       console.error('Error fetching from books.com.tw:', blogError);
@@ -175,17 +192,19 @@ async function fetchNCLData(isbn) {
 
     const titleElement = firstRow.find('.sumtd2000 a');
     const authorElement = firstRow.find('.sumtd2001');
+    const publisherElement = firstRow.find('.sumtd2002');
 
     const title =
       titleElement.attr('title') || titleElement.text().trim() || '';
     const author = authorElement.text().replace('#', '').trim() || '';
+    const publisher = publisherElement.text().replace('#', '').trim() || '';
 
     if (!title && !author) {
       console.log('找不到有效的書籍資訊');
       return [];
     }
 
-    const book = { isbn, title, author };
+    const book = { isbn, title, author, publisher };
     console.log('書籍資料:', book);
     return [book];
   } catch (error) {
@@ -195,7 +214,7 @@ async function fetchNCLData(isbn) {
 }
 
 // 加入基本的健康檢查路由
-app.get('/', (req, res) => {
+app.get('/', (_, res) => {
   res.json({ status: 'ok' });
 });
 
